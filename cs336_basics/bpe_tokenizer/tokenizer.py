@@ -2,6 +2,8 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
+from torch import special
+
 logger = logging.getLogger(__name__)
 
 Tokens = tuple[bytes, ...]
@@ -13,18 +15,18 @@ class Tokenizer(ABC):
     vocab: list[bytes]
     merges: list[TokenPair]
 
-    def __init__(self, special_tokens: Sequence[str]):
+    def __init__(self, special_tokens: Sequence[bytes]):
         self.vocab = self._initialize_vocab(special_tokens)
         self.merges = list()
 
     @staticmethod
-    def _initialize_vocab(special_tokens: Sequence[str]) -> list[bytes]:
+    def _initialize_vocab(special_tokens: Sequence[bytes]) -> list[bytes]:
         """
         Initialize the vocab using all 256 one-byte sequences and the given special tokens.
         Returns the vocabulary list, where the index is the token ID.
         """
         vocab = [chr(i).encode("utf-8") for i in range(256)]
-        vocab += [special_token.encode("utf-8") for special_token in special_tokens]
+        vocab += special_tokens
         logger.info("Vocabulary initialized: %d tokens", len(vocab))
         return vocab
 
