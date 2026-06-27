@@ -1,13 +1,12 @@
 import logging
-import os
+import re
 from abc import ABC, abstractmethod
 from collections import Counter
-from collections.abc import Iterator, Sequence
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 Tokens = tuple[bytes, ...]
+_WORD_RE = re.compile(rb"\S+")
 
 
 class Pretokenizer(ABC):
@@ -35,9 +34,8 @@ class NaivePretokenizer(Pretokenizer):
         self._tokenized_count: Counter[Tokens] = Counter()
 
     def process(self, segment: bytes):
-        pre_tokenized = segment.split()
-        logger.debug("Processed segment into %d token sequences", len(pre_tokenized))
-        tokenized = (tuple(word[i : i + 1] for i in range(len(word))) for word in pre_tokenized)
+        pre_tokenized = _WORD_RE.finditer(segment)
+        tokenized = (tuple(match.group()[i : i + 1] for i in range(len(match.group()))) for match in pre_tokenized)
         self._tokenized_count.update(tokenized)
         logger.debug("Updated tokenization count into %d unique sequences", len(self._tokenized_count))
 
