@@ -48,3 +48,16 @@ gunzip owt_valid.txt.gz
 cd ..
 ```
 
+### Run benchmarks
+
+You can run the ASV benchmarks:
+
+```sh
+uv run asv run
+```
+
+To publish and preview the benchmark results:
+
+```sh
+uv run asv publish && uv run asv preview
+```

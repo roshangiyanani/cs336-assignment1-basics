@@ -1,3 +1,5 @@
+#### python ####
+# From https://github.com/github/gitignore/blob/main/Python.gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -163,3 +165,5 @@ cython_debug/
 *.zip
 
 data/
+
+.asv
