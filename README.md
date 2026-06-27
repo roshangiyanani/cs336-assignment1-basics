@@ -50,14 +50,28 @@ cd ..
 
 ### Run benchmarks
 
-You can run the ASV benchmarks:
+You can run the ASV benchmarks with profiling enabled:
 
 ```sh
-uv run asv run
+uv run asv run --profile
 ```
 
 To publish and preview the benchmark results:
 
 ```sh
 uv run asv publish && uv run asv preview
+```
+
+#### Viewing profiling results
+
+To view a profile for a specific benchmark, use `asv profile` with the `--gui=snakeviz` flag:
+
+```sh
+uv run asv profile --gui=snakeviz <benchmark-name>
+```
+
+This opens an interactive flame graph in your browser. For example:
+
+```sh
+uv run asv profile --gui=snakeviz bench_tokenizer.TokenizerBenchmark.time_train
 ```

@@ -20,6 +20,7 @@ dependencies = [
     "ty>=0.0.26",
     "ruff>=0.15.8",
     "asv>=0.6.5",
+    "snakeviz>=2.2",
 ]
 
 [build-system]
