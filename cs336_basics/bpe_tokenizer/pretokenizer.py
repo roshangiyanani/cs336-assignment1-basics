@@ -38,9 +38,8 @@ class NaivePretokenizer(Pretokenizer):
         pre_tokenized = segment.split()
         logger.debug("Processed segment into %d token sequences", len(pre_tokenized))
         tokenized = (tuple(word[i : i + 1] for i in range(len(word))) for word in pre_tokenized)
-        tokenized_counts = Counter(tokenized)
-        logger.debug("Segment pretokenized into %d unique sequences", len(tokenized_counts))
-        self._tokenized_count.update(tokenized_counts)
+        self._tokenized_count.update(tokenized)
+        logger.debug("Updated tokenization count into %d unique sequences", len(self._tokenized_count))
 
     def finalize(self) -> Counter[Tokens]:
         logger.info("Finalized pretokenization into %d unique sequences", len(self._tokenized_count))
