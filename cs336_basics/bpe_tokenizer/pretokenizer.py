@@ -1,12 +1,13 @@
 import logging
-import re
 from abc import ABC, abstractmethod
 from collections import Counter
+
+import regex
 
 logger = logging.getLogger(__name__)
 
 Tokens = tuple[bytes, ...]
-_WORD_RE = re.compile(rb"\S+")
+_WORD_RE = regex.compile(rb"\S+")
 
 
 class Pretokenizer(ABC):

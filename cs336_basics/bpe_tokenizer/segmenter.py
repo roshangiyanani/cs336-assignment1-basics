@@ -1,9 +1,10 @@
 import logging
 import os
-import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from pathlib import Path
+
+import regex
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class InMemorySegmenter(Segmenter):
 
     def __init__(self, special_tokens: Sequence[bytes]):
         super().__init__()
-        self._special_tokens_re = re.compile(b"|".join(map(re.escape, special_tokens)))
+        self._special_tokens_re = regex.compile(b"|".join(map(regex.escape, special_tokens)))
 
     def run(self, input_path: Path) -> Iterator[bytes]:
         raw = Path(input_path).read_bytes()
