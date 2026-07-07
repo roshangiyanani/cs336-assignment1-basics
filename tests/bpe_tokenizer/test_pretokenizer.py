@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from typing import assert_never
 
 import pytest
 
@@ -68,9 +69,19 @@ from cs336_basics.bpe_tokenizer.pretokenizer import NaivePretokenizer, Pretokeni
         ),
     ],
 )
-def test_pretokenize(input_bytes: bytes, expected_counter: Counter):
+@pytest.mark.parametrize("input_type", [bytes, bytearray, memoryview])
+def test_pretokenize(input_bytes: bytes, input_type: type, expected_counter: Counter):
+    if input_type is bytes:
+        input = input_bytes
+    elif input_type is bytearray:
+        input = bytearray(input_bytes)
+    elif input_type is memoryview:
+        input = memoryview(bytearray(input_bytes))
+    else:
+        assert_never(input_type)
+
     pretokenizer = NaivePretokenizer()
-    pretokenizer.process(input_bytes)
+    pretokenizer.process(input)
     result = pretokenizer.finalize()
     assert result == expected_counter
 

@@ -16,7 +16,7 @@ class Pretokenizer(ABC):
     """
 
     @abstractmethod
-    def process(self, segment: bytes) -> None:
+    def process(self, segment: bytes | bytearray | memoryview) -> None:
         pass
 
     @abstractmethod
@@ -34,7 +34,7 @@ class NaivePretokenizer(Pretokenizer):
         super().__init__()
         self._tokenized_count: Counter[Tokens] = Counter()
 
-    def process(self, segment: bytes):
+    def process(self, segment: bytes | bytearray | memoryview):
         pre_tokenized = _WORD_RE.finditer(segment)
         tokenized = (tuple(match.group()[i : i + 1] for i in range(len(match.group()))) for match in pre_tokenized)
         self._tokenized_count.update(tokenized)
