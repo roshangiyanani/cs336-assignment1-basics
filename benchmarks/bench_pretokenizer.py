@@ -14,7 +14,7 @@ class PretokenizerBenchmark:
     def setup_cache(self):
         """Load the fixture file once to warm the OS page cache."""
         project_root = Path(__file__).resolve().parent.parent
-        input_path = project_root / "tests" / "fixtures" / "tinystories_sample_5M.txt"
+        input_path = project_root / "data" / "TinyStoriesV2-GPT4-valid.txt"
         input_path.read_bytes()  # warm disk cache
         return input_path
 

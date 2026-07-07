@@ -21,7 +21,7 @@ class TokenizerBenchmark:
         from cs336_basics.bpe_tokenizer.api import segment_and_pretokenize
 
         project_root = Path(__file__).resolve().parent.parent
-        input_path = project_root / "tests" / "fixtures" / "tinystories_sample_5M.txt"
+        input_path = project_root / "data" / "TinyStoriesV2-GPT4-valid.txt"
 
         return segment_and_pretokenize(input_path, _SPECIAL_TOKENS)
 
