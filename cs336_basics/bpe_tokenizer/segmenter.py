@@ -1,5 +1,4 @@
 import logging
-import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -15,7 +14,7 @@ class Segmenter(ABC):
     """
 
     @abstractmethod
-    def run(self, input_path: Path) -> Iterator[bytes]:
+    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
         pass
 
 
@@ -25,11 +24,18 @@ class InMemorySegmenter(Segmenter):
     """
 
     def __init__(self, special_tokens: Sequence[bytes]):
+        if not special_tokens:
+            raise ValueError("must pass in at least one special_token for segmentation")
+
+        for token in special_tokens:
+            if len(token) == 0:
+                raise ValueError("special_token must have len > 0")
+
         super().__init__()
         self._special_tokens_re = regex.compile(b"|".join(map(regex.escape, special_tokens)))
 
-    def run(self, input_path: Path) -> Iterator[bytes]:
-        raw = Path(input_path).read_bytes()
+    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
+        raw = input_path.read_bytes()
         logger.info("Read %d bytes", len(raw))
 
         segments_found = 0
@@ -45,3 +51,58 @@ class InMemorySegmenter(Segmenter):
             yield remainder
 
         logger.info("Segmented into %d parts.", segments_found)
+
+
+class BufferingSegmenter(Segmenter):
+    """
+    Segments the file during stream reading, returning each segment.
+    """
+
+    _DEFAULT_BUFFER_SIZE = 1 << 16  # 64kb
+
+    def __init__(self, special_tokens: Sequence[bytes], buffer_size: int = _DEFAULT_BUFFER_SIZE):
+        if not special_tokens:
+            raise ValueError("must pass in at least one special_token for segmentation")
+
+        if buffer_size <= 0:
+            raise ValueError("buffer_size must be > 0")
+
+        super().__init__()
+        self._special_tokens_re = regex.compile(b"|".join(map(regex.escape, special_tokens)))
+        self._buffer_size = buffer_size
+
+    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
+        logger.info("Starting to segment %s", input_path)
+        with input_path.open("rb") as f:
+            carry = b""
+            reads_issued = 0
+            amt_read = 0
+            segments_found = 0
+
+            while True:
+                reads_issued += 1
+                buffer = f.read(self._buffer_size)
+                amt_read += len(buffer)
+                logger.debug("Read %d bytes in read %d", len(buffer), reads_issued)
+                if len(buffer) == 0:
+                    if carry:
+                        segments_found += 1
+                        yield carry
+                    break
+
+                search = carry + buffer
+                pos = 0
+                # todo: don't need to start at pos, can start at like `len(carry) - self._carry_over_len`?
+                while (match := self._special_tokens_re.search(search, pos)) is not None:
+                    segments_found += 1
+                    yield search[pos : match.start()]
+                    pos = match.end()
+
+                if pos == 0:
+                    carry = search
+                elif pos == len(search):
+                    carry = b""
+                else:
+                    carry = search[pos:]
+
+        logger.info("Segmented %d bytes into %d parts from %d reads.", amt_read, segments_found, reads_issued)

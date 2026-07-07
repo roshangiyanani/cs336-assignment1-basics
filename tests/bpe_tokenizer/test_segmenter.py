@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import pytest
 
-from cs336_basics.bpe_tokenizer.segmenter import InMemorySegmenter
+from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter, InMemorySegmenter, Segmenter
 
 
 @pytest.mark.parametrize(
@@ -41,8 +42,22 @@ from cs336_basics.bpe_tokenizer.segmenter import InMemorySegmenter
         ),
     ],
 )
-def test_segment(tmp_path: Path, content: bytes, tokens: list[bytes], expected: list[bytes]):
+@pytest.mark.parametrize(
+    "segmenter_factory",
+    [
+        pytest.param(lambda tokens: InMemorySegmenter(tokens), id="InMemorySegmenter"),
+        pytest.param(lambda tokens: BufferingSegmenter(tokens, 1), id="BufferingSegmenter(1)"),
+        pytest.param(lambda tokens: BufferingSegmenter(tokens, 100), id="BufferingSegmenter(10)"),
+    ],
+)
+def test_segment(
+    tmp_path: Path,
+    segmenter_factory: Callable[[Sequence[bytes]], Segmenter],
+    content: bytes,
+    tokens: list[bytes],
+    expected: list[bytes],
+):
     file_path = tmp_path / "input.bin"
     file_path.write_bytes(content)
-    segmenter = InMemorySegmenter(tokens)
+    segmenter = segmenter_factory(tokens)
     assert list(segmenter.run(file_path)) == expected

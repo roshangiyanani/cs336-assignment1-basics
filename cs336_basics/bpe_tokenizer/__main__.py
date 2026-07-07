@@ -7,7 +7,7 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 
 from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import NaivePretokenizer
-from cs336_basics.bpe_tokenizer.segmenter import InMemorySegmenter
+from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter, InMemorySegmenter
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,9 @@ def main():
     parser.add_argument("--merges", type=int, default=6, help="Number of BPE merges to perform")
     args = parser.parse_args()
 
-    segments = InMemorySegmenter(SPECIAL_TOKENS).run(Path(args.filepath))
+    # segmenter = InMemorySegmenter(SPECIAL_TOKENS)
+    segmenter = BufferingSegmenter(SPECIAL_TOKENS)
+    segments = segmenter.run(Path(args.filepath))
     pretokenizer = NaivePretokenizer()
     with logging_redirect_tqdm():
         for segment in tqdm(segments, desc="Pretokenizing"):
