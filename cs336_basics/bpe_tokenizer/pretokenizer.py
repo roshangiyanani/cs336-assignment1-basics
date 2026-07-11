@@ -9,12 +9,12 @@ logger = logging.getLogger(__name__)
 
 Tokens = tuple[bytes, ...]
 
-WORD_RE = regex.compile(rb"\S+")
+WORD_RE = regex.compile(r"\S+")
 """
 A regex that performs pre-tokenization as described in the BPE training example, only splitting on whitespace.
 """
 
-GPT_RE = regex.compile(rb"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
+GPT_RE = regex.compile(r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
 """
 This is a slightly prettier form of the original regex used in GPT-2.
 
@@ -29,7 +29,7 @@ class Pretokenizer(ABC):
     """
 
     @abstractmethod
-    def process(self, segment: bytes | bytearray | memoryview) -> None:
+    def process(self, segment: str) -> None:
         pass
 
     @abstractmethod
@@ -42,14 +42,15 @@ class SimplePretokenizer(Pretokenizer):
     Performs simple pre-tokenization, with no buffering and parallelization.
     """
 
-    def __init__(self, re: Pattern[bytes]) -> None:
+    def __init__(self, re: Pattern[str]) -> None:
         super().__init__()
         self.re = re
         self._tokenized_count: Counter[Tokens] = Counter()
 
-    def process(self, segment: bytes | bytearray | memoryview):
+    def process(self, segment: str) -> None:
         pre_tokenized = self.re.finditer(segment)
-        tokenized = (tuple(match.group()[i : i + 1] for i in range(len(match.group()))) for match in pre_tokenized)
+        matches = (bytes(match.group(), "utf-8") for match in pre_tokenized)
+        tokenized = (tuple(match[i : i + 1] for i in range(len(match))) for match in matches)
         self._tokenized_count.update(tokenized)
         logger.debug("Updated tokenization count into %d unique sequences", len(self._tokenized_count))
 

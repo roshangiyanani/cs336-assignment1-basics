@@ -20,7 +20,7 @@ def test_initialize_vocab_no_special_tokens():
 
 
 def test_initialize_vocab_with_special_tokens():
-    special = [b"<|pad|>", b"<|eos|>"]
+    special = ["<|pad|>", "<|eos|>"]
     vocab = Tokenizer._initialize_vocab(special)
     assert len(vocab) == 258
     assert vocab[256] == b"<|pad|>"
@@ -199,7 +199,7 @@ def test_merge_until_already_exceeded():
 
 def test_as_output():
     pretokenized = Counter({(b"a", b"b"): 5})
-    tokenizer = NaiveTokenizer(pretokenized, [b"<|pad|>"])
+    tokenizer = NaiveTokenizer(pretokenized, ["<|pad|>"])
     tokenizer.merge_once()
 
     vocab_dict, merges = tokenizer.as_output()

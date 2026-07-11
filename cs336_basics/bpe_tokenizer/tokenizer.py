@@ -15,18 +15,18 @@ class Tokenizer(ABC):
     vocab: list[bytes]
     merges: list[TokenPair]
 
-    def __init__(self, special_tokens: Sequence[bytes]):
+    def __init__(self, special_tokens: Sequence[str]):
         self.vocab = self._initialize_vocab(special_tokens)
         self.merges = list()
 
     @staticmethod
-    def _initialize_vocab(special_tokens: Sequence[bytes]) -> list[bytes]:
+    def _initialize_vocab(special_tokens: Sequence[str]) -> list[bytes]:
         """
         Initialize the vocab using all 256 one-byte sequences and the given special tokens.
         Returns the vocabulary list, where the index is the token ID.
         """
         vocab = [chr(i).encode("utf-8") for i in range(256)]
-        vocab += special_tokens
+        vocab.extend(bytes(st, "utf-8") for st in special_tokens)
         logger.info("Vocabulary initialized: %d tokens", len(vocab))
         return vocab
 

@@ -20,7 +20,7 @@ class NaiveTokenizer(Tokenizer):
     Implements the basic tokenizer, with very few optimizations.
     """
 
-    def __init__(self, pretokenized: Counter[Tokens], special_tokens: Sequence[bytes]):
+    def __init__(self, pretokenized: Counter[Tokens], special_tokens: Sequence[str]):
         super().__init__(special_tokens)
         self.pretokenized_counts = list(pretokenized.items())
         self.token_pair_counts = self._count_token_pairs(self.pretokenized_counts)

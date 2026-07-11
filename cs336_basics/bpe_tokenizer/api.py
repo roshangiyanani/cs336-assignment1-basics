@@ -12,14 +12,13 @@ from pathlib import Path
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE
 
 # Type aliases
-ByteChunk = bytes | bytearray | memoryview
 Tokens = tuple[bytes, ...]
 
 
 def segment(
     input_path: Path,
-    special_tokens: Sequence[bytes],
-) -> Iterator[ByteChunk]:
+    special_tokens: Sequence[str],
+) -> Iterator[str]:
     """Segment a text file into document chunks.
 
     Returns an iterator of bytes-like objects. The concrete type
@@ -31,7 +30,7 @@ def segment(
 
 
 def pretokenize(
-    segments: Iterable[ByteChunk],
+    segments: Iterable[str],
 ) -> Counter[Tokens]:
     """Pretokenize segments into unigram token counts.
 
@@ -48,7 +47,7 @@ def pretokenize(
 
 def segment_and_pretokenize(
     input_path: Path,
-    special_tokens: Sequence[bytes],
+    special_tokens: Sequence[str],
 ) -> Counter[Tokens]:
     """Segment a file then pretokenize the segments.
 

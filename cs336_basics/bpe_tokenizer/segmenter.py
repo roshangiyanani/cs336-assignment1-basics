@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Buffer, Iterator, Sequence
 from pathlib import Path
 
 import regex
@@ -14,7 +14,7 @@ class Segmenter(ABC):
     """
 
     @abstractmethod
-    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
+    def run(self, input_path: Path) -> Iterator[str]:
         pass
 
 
@@ -23,7 +23,7 @@ class InMemorySegmenter(Segmenter):
     Loads the entire file into memory before segmenting.
     """
 
-    def __init__(self, special_tokens: Sequence[bytes]):
+    def __init__(self, special_tokens: Sequence[str]):
         if not special_tokens:
             raise ValueError("must pass in at least one special_token for segmentation")
 
@@ -32,10 +32,10 @@ class InMemorySegmenter(Segmenter):
                 raise ValueError("special_token must have len > 0")
 
         super().__init__()
-        self._special_tokens_re = regex.compile(b"|".join(map(regex.escape, special_tokens)))
+        self._special_tokens_re = regex.compile("|".join(map(regex.escape, special_tokens)))
 
-    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
-        raw = input_path.read_bytes()
+    def run(self, input_path: Path) -> Iterator[str]:
+        raw = input_path.read_text()
         logger.info("Read %d bytes", len(raw))
 
         segments_found = 0
@@ -60,7 +60,7 @@ class BufferingSegmenter(Segmenter):
 
     _DEFAULT_BUFFER_SIZE = 1 << 16  # 64kb
 
-    def __init__(self, special_tokens: Sequence[bytes], buffer_size: int = _DEFAULT_BUFFER_SIZE):
+    def __init__(self, special_tokens: Sequence[str], buffer_size: int = _DEFAULT_BUFFER_SIZE):
         if not special_tokens:
             raise ValueError("must pass in at least one special_token for segmentation")
 
@@ -68,13 +68,13 @@ class BufferingSegmenter(Segmenter):
             raise ValueError("buffer_size must be > 0")
 
         super().__init__()
-        self._special_tokens_re = regex.compile(b"|".join(map(regex.escape, special_tokens)))
+        self._special_tokens_re = regex.compile("|".join(map(regex.escape, special_tokens)))
         self._buffer_size = buffer_size
 
-    def run(self, input_path: Path) -> Iterator[bytes | memoryview]:
+    def run(self, input_path: Path) -> Iterator[str]:
         logger.info("Starting to segment %s", input_path)
-        with input_path.open("rb") as f:
-            carry = b""
+        with input_path.open("r") as f:
+            carry = ""
             reads_issued = 0
             amt_read = 0
             segments_found = 0
@@ -101,7 +101,7 @@ class BufferingSegmenter(Segmenter):
                 if pos == 0:
                     carry = search
                 elif pos == len(search):
-                    carry = b""
+                    carry = ""
                 else:
                     carry = search[pos:]
 

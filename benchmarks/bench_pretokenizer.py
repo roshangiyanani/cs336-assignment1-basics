@@ -21,6 +21,6 @@ class PretokenizerBenchmark:
     def time_segment_and_pretokenize(self, input_path):
         from cs336_basics.bpe_tokenizer.api import segment_and_pretokenize
 
-        SPECIAL_TOKENS = [b"<|endoftext|>"]
+        SPECIAL_TOKENS = ["<|endoftext|>"]
 
         segment_and_pretokenize(input_path, SPECIAL_TOKENS)

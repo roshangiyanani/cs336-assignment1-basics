@@ -7,7 +7,7 @@ Run with:
 
 from pathlib import Path
 
-_SPECIAL_TOKENS = [b"<|endoftext|>"]
+_SPECIAL_TOKENS = ["<|endoftext|>"]
 
 
 class TokenizerBenchmark:
