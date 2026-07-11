@@ -24,9 +24,9 @@ def segment(
     Returns an iterator of bytes-like objects. The concrete type
     (list, generator, etc.) depends on the underlying implementation.
     """
-    from .segmenter import InMemorySegmenter
+    from .segmenter import BufferingSegmenter
 
-    return InMemorySegmenter(special_tokens).run(input_path)
+    return BufferingSegmenter(special_tokens).run(input_path)
 
 
 def pretokenize(
