@@ -5,7 +5,7 @@ from typing import assert_never
 
 import pytest
 
-from cs336_basics.bpe_tokenizer.pretokenizer import NaivePretokenizer, Pretokenizer
+from cs336_basics.bpe_tokenizer.pretokenizer import WORD_RE, Pretokenizer, SimplePretokenizer
 
 
 @pytest.mark.parametrize(
@@ -80,14 +80,14 @@ def test_pretokenize(input_bytes: bytes, input_type: type, expected_counter: Cou
     else:
         assert_never(input_type)
 
-    pretokenizer = NaivePretokenizer()
+    pretokenizer = SimplePretokenizer(re=WORD_RE)
     pretokenizer.process(input)
     result = pretokenizer.finalize()
     assert result == expected_counter
 
 
 def test_accumulation_across_calls():
-    pretokenizer = NaivePretokenizer()
+    pretokenizer = SimplePretokenizer(re=WORD_RE)
     pretokenizer.process(b"hi")
     pretokenizer.process(b"hello")
     pretokenizer.process(b"hi")

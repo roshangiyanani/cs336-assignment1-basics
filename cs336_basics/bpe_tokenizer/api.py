@@ -9,6 +9,8 @@ from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 
+from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE
+
 # Type aliases
 ByteChunk = bytes | bytearray | memoryview
 Tokens = tuple[bytes, ...]
@@ -36,9 +38,9 @@ def pretokenize(
     Accepts any iterable of bytes-like objects. The iterable is consumed
     exactly once (generators are safe).
     """
-    from .pretokenizer import NaivePretokenizer
+    from .pretokenizer import SimplePretokenizer
 
-    pretokenizer = NaivePretokenizer()
+    pretokenizer = SimplePretokenizer(re=GPT_RE)
     for seg in segments:
         pretokenizer.process(seg)
     return pretokenizer.finalize()

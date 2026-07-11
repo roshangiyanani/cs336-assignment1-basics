@@ -6,7 +6,7 @@ from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
-from cs336_basics.bpe_tokenizer.pretokenizer import NaivePretokenizer
+from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
 from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter, InMemorySegmenter
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def main():
     # segmenter = InMemorySegmenter(SPECIAL_TOKENS)
     segmenter = BufferingSegmenter(SPECIAL_TOKENS)
     segments = segmenter.run(Path(args.filepath))
-    pretokenizer = NaivePretokenizer()
+    pretokenizer = SimplePretokenizer(re=GPT_RE)
     with logging_redirect_tqdm():
         for segment in tqdm(segments, desc="Pretokenizing"):
             pretokenizer.process(segment)
