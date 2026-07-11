@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterable
+from pathlib import Path
+import token
 from typing import IO, Any, BinaryIO
 
 import numpy.typing as npt
 import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
+
+from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
+from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
+from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter
 
 
 def run_linear(
@@ -589,4 +595,17 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    raise NotImplementedError
+
+    segmenter = BufferingSegmenter(special_tokens)
+    segments = segmenter.run(Path(input_path))
+
+    pretokenizer = SimplePretokenizer(re=GPT_RE)
+    for seg in segments:
+        pretokenizer.process(seg)
+
+    counts = pretokenizer.finalize()
+
+    tokenizer = NaiveTokenizer(counts, special_tokens)
+    tokenizer.merge_until(vocab_size)
+
+    return tokenizer.as_output()

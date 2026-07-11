@@ -25,7 +25,7 @@ class Tokenizer(ABC):
         Initialize the vocab using all 256 one-byte sequences and the given special tokens.
         Returns the vocabulary list, where the index is the token ID.
         """
-        vocab = [chr(i).encode("utf-8") for i in range(256)]
+        vocab = [bytes([i]) for i in range(256)]
         vocab.extend(bytes(st, "utf-8") for st in special_tokens)
         logger.info("Vocabulary initialized: %d tokens", len(vocab))
         return vocab
