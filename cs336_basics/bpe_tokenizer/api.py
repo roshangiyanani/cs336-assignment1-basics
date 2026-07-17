@@ -15,7 +15,7 @@ from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE
 Tokens = tuple[bytes, ...]
 
 
-def segment(
+def _segment(
     input_path: Path,
     special_tokens: Sequence[str],
 ) -> Iterator[str]:
@@ -29,7 +29,7 @@ def segment(
     return BufferingSegmenter(special_tokens).run(input_path)
 
 
-def pretokenize(
+def _pretokenize(
     segments: Iterable[str],
 ) -> Counter[Tokens]:
     """Pretokenize segments into unigram token counts.
@@ -54,13 +54,13 @@ def segment_and_pretokenize(
     Returns unigram token counts. The segments iterator flows directly
     into pretokenization without materialization.
     """
-    segments = segment(input_path, special_tokens)
-    return pretokenize(segments)
+    segments = _segment(input_path, special_tokens)
+    return _pretokenize(segments)
 
 
 def train(
     counts: Counter[Tokens],
-    special_tokens: Sequence[bytes],
+    special_tokens: Sequence[str],
     n_merges: int,
 ) -> None:
     """Train a BPE tokenizer by performing ``n_merges`` merge steps.

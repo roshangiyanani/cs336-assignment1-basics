@@ -54,7 +54,7 @@ class NaiveTokenizer(Tokenizer):
         _, highest_count = self.token_pair_counts.most_common(1)[0]
         most_common_pair = max(token for token, count in self.token_pair_counts.items() if count == highest_count)
         token = b"".join(most_common_pair)
-        logger.info("Merge: %r + %r → %r (count: %d)", most_common_pair[0], most_common_pair[1], token, highest_count)
+        logger.debug("Merge: %r + %r → %r (count: %d)", most_common_pair[0], most_common_pair[1], token, highest_count)
 
         for i in range(len(self.pretokenized_counts)):
             word, count = self.pretokenized_counts[i]

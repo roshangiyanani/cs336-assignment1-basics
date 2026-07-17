@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable
 from pathlib import Path
-import token
 from typing import IO, Any, BinaryIO
 
 import numpy.typing as npt
@@ -12,6 +11,7 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
 from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
+from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
 from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter
 
@@ -596,14 +596,11 @@ def run_train_bpe(
                 Merges are ordered by order of creation.
     """
 
-    segmenter = BufferingSegmenter(special_tokens)
-    segments = segmenter.run(Path(input_path))
-
     pretokenizer = SimplePretokenizer(re=GPT_RE)
-    for seg in segments:
-        pretokenizer.process(seg)
-
-    counts = pretokenizer.finalize()
+    counts = ParallelSegmenterandPretokenizer(
+        special_tokens=special_tokens,
+        pretokenizer=pretokenizer,
+    ).process(Path(input_path), progress=False)
 
     tokenizer = NaiveTokenizer(counts, special_tokens)
     tokenizer.merge_until(vocab_size)

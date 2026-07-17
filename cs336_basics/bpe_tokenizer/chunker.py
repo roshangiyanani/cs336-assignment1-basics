@@ -35,7 +35,7 @@ class Chunker:
 
     _BUFFER_SIZE = 1 << 14  # 16kb
 
-    def chunk(self, input: Path, num_chunks: int, min_size: int = 0) -> Iterable[tuple[int, int | None]]:
+    def chunk(self, input: Path, min_size: int = 0, num_chunks: int = 0) -> Iterable[tuple[int, int | None]]:
         """
         Splits a file into roughly equal-sized chunks, aligning boundaries
         to segment boundaries (the position after a special token).
@@ -43,13 +43,17 @@ class Chunker:
         Returns an iterable of (start, end) byte offset pairs. `end` is `None` for
         the last chunk, meaning \"through the end of the file.\"
 
-        Guaranteed to return <= num_chunks. (TODO: Validate)
+        Guaranteed to return <= num_chunks, if given. (TODO: Validate)
+        Guaranteed to return chunks of >= min_size.
         """
-        if num_chunks < 1:
-            raise ValueError("must have at least 1 chunk")
-
         if min_size < 0:
             raise ValueError("min_size, if given, must be at least 1")
+
+        if num_chunks < 0:
+            raise ValueError("must have at least 1 chunk")
+
+        if min_size == 0 and num_chunks == 0:
+            raise ValueError("at least min_size or num_chunks must be given")
 
         with input.open("rb") as f:
             size = f.seek(0, os.SEEK_END)
@@ -57,10 +61,14 @@ class Chunker:
             if size == 0:
                 return []
 
-            chunk_size = (size + num_chunks - 1) // num_chunks
-            if chunk_size < min_size:
-                logger.warning("chunk_size %d is less than min_size %d. Adjusting to %d", chunk_size, min_size, min_size)
+            if num_chunks == 0:
+                assert min_size > 0
                 chunk_size = min_size
+            else:
+                chunk_size = (size + num_chunks - 1) // num_chunks
+                if chunk_size < min_size:
+                    logger.warning("chunk_size %d is less than min_size %d. Adjusting to %d", chunk_size, min_size, min_size)
+                    chunk_size = min_size
 
             chunk_start = 0
             while chunk_start < size:
@@ -121,14 +129,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run the Chunker on a file.")
     parser.add_argument("filepath", type=Path, help="Path to the input file")
-    parser.add_argument("--num-chunks", type=int, default=10, help="Number of chunks to split the file into.")
+    parser.add_argument("--num-chunks", type=int, default=0, help="Number of chunks to split the file into.")
     parser.add_argument("--min-size", type=int, default=0, help="Minimum size of each chunk in bytes.")
     parser.add_argument("--special-tokens", nargs="+", default=["<|endoftext|>"], help="Special tokens to use for segment boundaries.")
     args = parser.parse_args()
 
     chunker = Chunker(special_tokens=args.special_tokens)
 
-    chunks = list(chunker.chunk(args.filepath, args.num_chunks, args.min_size))
+    chunks = list(chunker.chunk(args.filepath, num_chunks=args.num_chunks, min_size=args.min_size))
 
 
     print("\n--- Summary ---")

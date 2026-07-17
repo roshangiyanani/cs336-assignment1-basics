@@ -8,7 +8,7 @@ import pytest
 from cs336_basics.bpe_tokenizer.chunker import Chunker
 
 
-class TestConstructor:
+class TestValidation:
     def test_reject_no_tokens(self):
         with pytest.raises(ValueError, match="at least one special_token"):
             Chunker([])
@@ -33,6 +33,21 @@ class TestConstructor:
     def test_reject_nonexclusive_tokens(self):
         with pytest.raises(ValueError, match="must be non-exclusive"):
             Chunker(["|", "<|end|>"])
+
+    @pytest.mark.parametrize(
+        "min_size,num_chunks,match",
+        [
+            pytest.param(0, 0, "at least min_size or num_chunks must be given", id="neither given"),
+            pytest.param(-1, 2, "min_size, if given, must be at least 1", id="negative min_size"),
+            pytest.param(1, -1, "must have at least 1 chunk", id="negative num_chunks"),
+        ],
+    )
+    def test_reject_invalid_chunk_args(self, tmp_path: Path, min_size: int, num_chunks: int, match: str):
+        file_path = tmp_path / "input.txt"
+        file_path.write_text("a|b|c|d")
+        chunker = Chunker(["|"])
+        with pytest.raises(ValueError, match=match):
+            list(chunker.chunk(file_path, min_size=min_size, num_chunks=num_chunks))
 
 
 # --- Basic chunking ---
@@ -106,7 +121,7 @@ def test_chunk(
     file_path = tmp_path / "input.txt"
     file_path.write_text(content)
     chunker = Chunker(["|"])
-    assert list(chunker.chunk(file_path, num_chunks, min_size=0)) == expected
+    assert list(chunker.chunk(file_path, num_chunks=num_chunks, min_size=0)) == expected
 
 
 # --- min_size adjustment ---
@@ -154,7 +169,53 @@ def test_min_size_adjustment(
     file_path = tmp_path / "input.txt"
     file_path.write_text(content)
     chunker = Chunker(["|"])
-    assert list(chunker.chunk(file_path, num_chunks, min_size)) == expected
+    assert list(chunker.chunk(file_path, num_chunks=num_chunks, min_size=min_size)) == expected
+
+
+# --- min_size only (num_chunks=0) ---
+
+@pytest.mark.parametrize(
+    "content,min_size,expected",
+    [
+        pytest.param(
+            "a|b|c|d",
+            4,
+            # 8 chars
+            # chunk_size = 4
+            # chunk_1 is [0, 4)
+            # adjust 4: "|" of "c|" -> 6
+            [(0, 6), (6, None)],
+            id="min_size only fits twice",
+        ),
+        pytest.param(
+            "a|b|c|d",
+            10,
+            # 8 chars
+            # chunk_size = 10, larger than file
+            [(0, None)],
+            id="min_size larger than file",
+        ),
+        pytest.param(
+            "a|b|c|d|e|f",
+            3,
+            # 12 chars
+            # chunk_size = 3
+            # chunk_1 is [0, 3)
+            # adjust 3: "|" of "|c|" -> 4
+            # chunk_2 is [4, 7)
+            # adjust 7: "|" of "|e|" -> 8
+            # chunk_3 is [8, 11)
+            # adjust 11: no "|" found -> EOF
+            [(0, 4), (4, 8), (8, None)],
+            id="min_size only many chunks",
+        ),
+    ],
+)
+def test_min_size_only(tmp_path: Path, content: str, min_size: int, expected: list[tuple[int, int | None]]):
+    file_path = tmp_path / "input.txt"
+    file_path.write_text(content)
+    chunker = Chunker(["|"])
+    assert list(chunker.chunk(file_path, min_size=min_size)) == expected
 
 
 # --- Invariants ---
@@ -164,7 +225,7 @@ def test_chunks_non_overlapping(tmp_path: Path):
     file_path = tmp_path / "input.txt"
     file_path.write_text(content)
     chunker = Chunker(["|"])
-    chunks = list(chunker.chunk(file_path, 4, 0))
+    chunks = list(chunker.chunk(file_path, num_chunks=4, min_size=0))
 
     assert chunks[0][0] == 0, "first chunk starts at 0"
     assert chunks[-1][1] is None, "last chunk end is None"
@@ -181,7 +242,7 @@ def test_chunk_count(tmp_path: Path):
     chunker = Chunker(["|"])
 
     for num in range(1, 10):
-        chunks = list(chunker.chunk(file_path, num, 0))
+        chunks = list(chunker.chunk(file_path, num_chunks=num, min_size=0))
         assert len(chunks) <= num, f"expected <={num} chunks, got {len(chunks)}"
 
 
@@ -189,7 +250,6 @@ def test_chunk_count(tmp_path: Path):
 @pytest.mark.parametrize(
     "content, tokens, num_chunks, expected",
     [
-        # TODO: this is a bug -- need to support lookback back for this.
         pytest.param(
             "doc1-doc2<|sep|>doc3-doc4",
             ["-", "<|sep|>"],
@@ -221,4 +281,4 @@ def test_special_tokens(
     file_path = tmp_path / "input.txt"
     file_path.write_text(content)
     chunker = Chunker(tokens)
-    assert list(chunker.chunk(file_path, num_chunks, min_size=0)) == expected
+    assert list(chunker.chunk(file_path, num_chunks=num_chunks, min_size=0)) == expected
