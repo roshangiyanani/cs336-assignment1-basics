@@ -9,7 +9,8 @@ from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 
-from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE
+from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
+from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
 
 # Type aliases
 Tokens = tuple[bytes, ...]
@@ -48,14 +49,21 @@ def _pretokenize(
 def segment_and_pretokenize(
     input_path: Path,
     special_tokens: Sequence[str],
+    parallel: bool = False
 ) -> Counter[Tokens]:
     """Segment a file then pretokenize the segments.
 
     Returns unigram token counts. The segments iterator flows directly
     into pretokenization without materialization.
     """
-    segments = _segment(input_path, special_tokens)
-    return _pretokenize(segments)
+    if parallel:
+        return ParallelSegmenterandPretokenizer(
+            pretokenizer=SimplePretokenizer(re=GPT_RE),
+            special_tokens=special_tokens
+        ).process(input_path=input_path)
+    else:
+        segments = _segment(input_path, special_tokens)
+        return _pretokenize(segments)
 
 
 def train(
