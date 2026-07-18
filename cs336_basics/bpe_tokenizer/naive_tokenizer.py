@@ -77,7 +77,8 @@ class NaiveTokenizer(Tokenizer):
         indexes = []
 
         i = 0
-        while i < len(pretokenized) - 1:
+        max_i = len(pretokenized) - 1
+        while i < max_i:
             if (pretokenized[i], pretokenized[i + 1]) == merge:
                 indexes.append(i)
                 i += 2
