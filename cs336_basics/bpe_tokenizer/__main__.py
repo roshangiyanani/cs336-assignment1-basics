@@ -25,6 +25,8 @@ def main():
     parser.add_argument("--vocab-size", type=int, default=1000, help="Desired vocab size.")
     args = parser.parse_args()
 
+    filepath = Path(args.filepath)
+
     pretokenizer = SimplePretokenizer(re=GPT_RE)
     parallel_processor = ParallelSegmenterandPretokenizer(
         special_tokens=SPECIAL_TOKENS,
@@ -32,7 +34,7 @@ def main():
     )
 
     with tqdm_logging_redirect():
-        pretokenized_counts = parallel_processor.process(Path(args.filepath))
+        pretokenized_counts = parallel_processor.process(filepath)
 
         tokenizer = Tokenizer(SPECIAL_TOKENS, pretokenized_counts)
         logger.info("Training: %d vocab size", args.vocab_size)
@@ -48,14 +50,16 @@ def main():
     longest_token = max(tokenizer.vocab, key=len)
     logger.info("Longest vocab token (%d bytes): %r", len(longest_token), longest_token)
 
-    vocab_path = Path("vocab.json")
+    write_path = filepath.with_suffix("")
+    write_path.mkdir(parents=True, exist_ok=True)
+    vocab_path = write_path / "vocab.json"
     # Convert bytes to latin-1 strings for JSON serialization and readable text export
     serializable_vocab = {k: v.decode('latin-1') for k, v in vocab.items()}
     with open(vocab_path, "w", encoding="utf-8") as f:
         json.dump(serializable_vocab, f, ensure_ascii=False, indent=2)
     logger.info("Vocab saved to %s", vocab_path)
 
-    merges_path = Path("merges.txt")
+    merges_path = write_path / Path("merges.txt")
     with open(merges_path, "w", encoding="utf-8") as f:
         for src, tgt in merges:
             f.write(f'"{src.decode("latin-1")}" "{tgt.decode("latin-1")}"\n')
