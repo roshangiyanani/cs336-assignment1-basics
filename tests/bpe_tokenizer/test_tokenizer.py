@@ -215,10 +215,10 @@ def test_as_output():
 
 def test_empty_pretokenized():
     tokenizer = Tokenizer([], Counter())
-    assert len(tokenizer.token_pair_counts) == 0
+    assert len(tokenizer.token_pair_count_max_heap) == 0
 
 
 def test_single_byte_words_no_pairs():
     pretokenized = Counter({(b"a",): 5, (b"b",): 3})
     tokenizer = Tokenizer([], pretokenized)
-    assert len(tokenizer.token_pair_counts) == 0
+    assert len(tokenizer.token_pair_count_max_heap) == 0

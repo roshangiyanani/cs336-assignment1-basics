@@ -3,6 +3,7 @@ from itertools import pairwise
 import logging
 from collections.abc import Iterable, Sequence
 from typing import NamedTuple
+import heapq
 
 
 logger = logging.getLogger(__name__)
@@ -24,11 +25,14 @@ class Tokenizer:
         self.vocab = self._initialize_vocab(special_tokens)
         self.merges = list()
         self.pretokenized_counts = list(pretokenized.items())
-        self.token_pair_counts, self.token_pair_index = self._count_token_pairs(self.pretokenized_counts)
+        self.token_pair_count_hashmap, self.token_pair_index = self._count_token_pairs(self.pretokenized_counts)
+        self.token_pair_count_max_heap = [(count, token_pair) for token_pair, count in self.token_pair_count_hashmap.items()]
+        heapq.heapify_max(self.token_pair_count_max_heap)
+
         logger.info(
             "Tokenizer initialized: %d pretokenized entries, %d token pairs",
             len(self.pretokenized_counts),
-            len(self.token_pair_counts),
+            len(self.token_pair_count_max_heap),
         )
 
     @staticmethod
@@ -105,10 +109,14 @@ class Tokenizer:
         """
         Completes one token merge, updating any index structures as needed, and return the token we merged.
         """
-        _, highest_count = self.token_pair_counts.most_common(1)[0]
-        most_common_pair = max(token for token, count in self.token_pair_counts.items() if count == highest_count)
+        highest_count, most_common_pair = heapq.heappop_max(self.token_pair_count_max_heap)
+        while self.token_pair_count_hashmap[most_common_pair] != highest_count:
+            highest_count, most_common_pair = heapq.heappop_max(self.token_pair_count_max_heap)
+
         token = b"".join(most_common_pair)
         logger.debug("Merge: %r + %r → %r (count: %d)", most_common_pair[0], most_common_pair[1], token, highest_count)
+
+        token_pairs_delta: dict[TokenPair, int] = defaultdict(int) # int() == 0
 
         for i, count in self.token_pair_index[most_common_pair].items():
             if count > 0:
@@ -119,15 +127,18 @@ class Tokenizer:
                 new_word, inc_pairs, dec_pairs = self._apply_merge_and_get_count_diff(word, indexes, token)
                 for inc_pair in inc_pairs:
                     self.token_pair_index[inc_pair][i] += 1
-                    self.token_pair_counts[inc_pair] += count
+                    token_pairs_delta[inc_pair] += count
 
                 for dec_pair in dec_pairs:
                     self.token_pair_index[dec_pair][i] -= 1
-                    self.token_pair_counts[dec_pair] -= count
+                    token_pairs_delta[dec_pair] -= count
 
                 self.pretokenized_counts[i] = new_word, count
 
-        del self.token_pair_counts[most_common_pair]
+        del self.token_pair_count_hashmap[most_common_pair]
+        for token_pair, delta in token_pairs_delta.items():
+            self.token_pair_count_hashmap[token_pair] += delta
+            heapq.heappush_max(self.token_pair_count_max_heap, (self.token_pair_count_hashmap[token_pair], token_pair))
 
         return most_common_pair
 
