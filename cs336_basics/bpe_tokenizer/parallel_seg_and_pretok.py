@@ -47,7 +47,7 @@ class ParallelSegmenterandPretokenizer:
         self,
         special_tokens: Sequence[str],
         pretokenizer: Pretokenizer,
-        min_size: int = 2 << 26, # ~64mb
+        min_size: int = 1 << 25, # ~32mb
     ) -> None:
         """
         Initializes the parallel segmenter and pretokenizer.

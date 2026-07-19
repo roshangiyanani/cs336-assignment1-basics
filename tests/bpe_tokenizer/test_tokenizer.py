@@ -63,7 +63,7 @@ def test_initialize_vocab_with_special_tokens():
     ],
 )
 def test_count_token_pairs(pretokenized: list[tuple[Tokens, int]], expected_pairs: Counter[TokenPair]):
-    result = NaiveTokenizer._count_token_pairs(pretokenized)
+    result = NaiveTokenizer._count_token_pairs(pretokenized)[0]
     assert result == expected_pairs
 
 

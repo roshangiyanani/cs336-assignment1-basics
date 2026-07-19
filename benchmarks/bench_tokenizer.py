@@ -13,7 +13,7 @@ _SPECIAL_TOKENS = ["<|endoftext|>"]
 class TokenizerBenchmark:
     """Benchmark BPE tokenizer training (merge steps only)."""
 
-    params = [["TinyStoriesV2-GPT4-valid.txt", "owt_valid.txt"], [1, 5, 25]]
+    params = [["TinyStoriesV2-GPT4-valid.txt", "owt_valid.txt"], [5 ** e for e in range(6)]]
     param_names = ["file", "n_merges"]
 
 
