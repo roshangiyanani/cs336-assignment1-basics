@@ -7,7 +7,7 @@ from pathlib import Path
 from tqdm import tqdm
 from tqdm.contrib.logging import tqdm_logging_redirect
 
-from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
+from cs336_basics.bpe_tokenizer.tokenizer import Tokenizer
 from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
 
@@ -33,7 +33,7 @@ def main():
     with tqdm_logging_redirect():
         pretokenized_counts = parallel_processor.process(Path(args.filepath))
 
-        tokenizer = NaiveTokenizer(pretokenized_counts, SPECIAL_TOKENS)
+        tokenizer = Tokenizer(SPECIAL_TOKENS, pretokenized_counts)
         logger.info("Training: %d vocab size", args.vocab_size)
         vocab_size = len(tokenizer.vocab)
 

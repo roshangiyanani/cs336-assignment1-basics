@@ -10,10 +10,9 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
-from cs336_basics.bpe_tokenizer.naive_tokenizer import NaiveTokenizer
 from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
-from cs336_basics.bpe_tokenizer.segmenter import BufferingSegmenter
+from cs336_basics.bpe_tokenizer.tokenizer import Tokenizer
 
 
 def run_linear(
@@ -602,7 +601,7 @@ def run_train_bpe(
         pretokenizer=pretokenizer,
     ).process(Path(input_path), progress=False)
 
-    tokenizer = NaiveTokenizer(counts, special_tokens)
+    tokenizer = Tokenizer(special_tokens, counts)
     tokenizer.merge_until(vocab_size)
 
     return tokenizer.as_output()

@@ -11,9 +11,7 @@ from pathlib import Path
 
 from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
-
-# Type aliases
-Tokens = tuple[bytes, ...]
+from cs336_basics.bpe_tokenizer.tokenizer import Tokenizer, Tokens
 
 
 def _segment(
@@ -76,7 +74,6 @@ def train(
     The tokenizer state is internal; this function is meant for
     benchmarking the merge workload.
     """
-    from .naive_tokenizer import NaiveTokenizer
 
-    tokenizer = NaiveTokenizer(counts, special_tokens)
+    tokenizer = Tokenizer(special_tokens, counts)
     tokenizer.merge_n(n_merges)
