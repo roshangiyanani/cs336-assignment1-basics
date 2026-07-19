@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -43,6 +44,23 @@ def main():
     vocab, merges = tokenizer.as_output()
 
     logger.info("Training complete. Vocab size: %d, Merges: %d", len(vocab), len(merges))
+
+    longest_token = max(tokenizer.vocab, key=len)
+    logger.info("Longest vocab token (%d bytes): %r", len(longest_token), longest_token)
+
+    vocab_path = Path("vocab.json")
+    # Convert bytes to latin-1 strings for JSON serialization and readable text export
+    serializable_vocab = {k: v.decode('latin-1') for k, v in vocab.items()}
+    with open(vocab_path, "w", encoding="utf-8") as f:
+        json.dump(serializable_vocab, f, ensure_ascii=False, indent=2)
+    logger.info("Vocab saved to %s", vocab_path)
+
+    merges_path = Path("merges.txt")
+    with open(merges_path, "w", encoding="utf-8") as f:
+        for src, tgt in merges:
+            f.write(f'"{src.decode("latin-1")}" "{tgt.decode("latin-1")}"\n')
+    logger.info("Merges saved to %s", merges_path)
+
     logger.debug("Merges: %s", merges)
 
 
