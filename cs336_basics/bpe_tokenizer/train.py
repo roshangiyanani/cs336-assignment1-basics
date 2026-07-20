@@ -17,7 +17,7 @@ class _MergeResult(NamedTuple):
     incremented_pairs: list[TokenPair]
     decremented_pairs: list[TokenPair]
 
-class Tokenizer:
+class TokenizeTrainer:
     vocab: list[bytes]
     merges: list[TokenPair]
 

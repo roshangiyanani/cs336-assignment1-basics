@@ -11,7 +11,7 @@ from pathlib import Path
 
 from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
-from cs336_basics.bpe_tokenizer.tokenizer import Tokenizer, Tokens
+from cs336_basics.bpe_tokenizer.train import TokenizeTrainer, Tokens
 
 
 def _segment(
@@ -75,5 +75,5 @@ def train(
     benchmarking the merge workload.
     """
 
-    tokenizer = Tokenizer(special_tokens, counts)
+    tokenizer = TokenizeTrainer(special_tokens, counts)
     tokenizer.merge_n(n_merges)

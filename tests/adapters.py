@@ -12,7 +12,7 @@ from torch import Tensor
 
 from cs336_basics.bpe_tokenizer.parallel_seg_and_pretok import ParallelSegmenterandPretokenizer
 from cs336_basics.bpe_tokenizer.pretokenizer import GPT_RE, SimplePretokenizer
-from cs336_basics.bpe_tokenizer.tokenizer import Tokenizer
+from cs336_basics.bpe_tokenizer.train import TokenizeTrainer
 
 
 def run_linear(
@@ -601,7 +601,7 @@ def run_train_bpe(
         pretokenizer=pretokenizer,
     ).process(Path(input_path), progress=False)
 
-    tokenizer = Tokenizer(special_tokens, counts)
+    tokenizer = TokenizeTrainer(special_tokens, counts)
     tokenizer.merge_until(vocab_size)
 
     return tokenizer.as_output()
