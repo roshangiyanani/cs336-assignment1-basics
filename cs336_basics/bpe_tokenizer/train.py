@@ -62,48 +62,38 @@ class TokenizeTrainer:
         return vocab
 
     @staticmethod
-    def _indexes_to_merge(pretokenized: Tokens, merge: TokenPair) -> list[int]:
-        indexes = []
-
-        i = 0
-        max_i = len(pretokenized) - 1
-        while i < max_i:
-            if (pretokenized[i], pretokenized[i + 1]) == merge:
-                indexes.append(i)
-                i += 2
-            else:
-                i += 1
-
-        return indexes
-
-    @staticmethod
-    def _apply_merge_and_get_count_diff(word: Tokens, merge_indexes: list[int], replacement: bytes) -> _MergeResult:
-        if not merge_indexes:
-            return _MergeResult(word, [], [])
-
+    def _merge_and_get_count_diff(word: Tokens, merge: TokenPair, replacement: bytes) -> _MergeResult:
         updated_word: list[bytes] = []
         inc_pairs: list[TokenPair] = []
         dec_pairs: list[TokenPair] = []
 
-        prev = 0
-        for m in merge_indexes:
-            if m != 0:
-                before = word[m - 1]
-                dec_pairs.append((before, word[m]))
-                inc_pairs.append((before, replacement))
+        index_a = 0
+        max_index_a = len(word) - 1  # because the merge is with the _next_ Token
+        while index_a < max_index_a:
+            if (word[index_a], word[index_a+1]) == merge:
 
-            if m + 2 < len(word):
-                after = word[m + 2]
-                dec_pairs.append((word[m + 1], after))
-                inc_pairs.append((replacement, after))
+                if index_a != 0:
+                    before = updated_word[-1]
+                    dec_pairs.append((before, word[index_a]))
+                    inc_pairs.append((before, replacement))
 
-            updated_word.extend(word[prev:m])
-            updated_word.append(replacement)
-            prev = m + 2
+                if index_a+1 < max_index_a:
+                    after = word[index_a + 2]
+                    dec_pairs.append((word[index_a+1], after))
+                    inc_pairs.append((replacement, after))
 
-        updated_word.extend(word[prev:])
+                updated_word.append(replacement)
+                index_a += 2
+            else:
+                updated_word.append(word[index_a])
+                index_a += 1
+
+        if index_a == max_index_a:
+            # append the last token
+            updated_word.append(word[index_a])
 
         return _MergeResult(tuple(updated_word), inc_pairs, dec_pairs)
+
 
     def _merge_one(self) -> TokenPair:
         """
@@ -121,10 +111,7 @@ class TokenizeTrainer:
         for i, count in self.token_pair_index[most_common_pair].items():
             if count > 0:
                 word, count = self.pretokenized_counts[i]
-                indexes = self._indexes_to_merge(word, most_common_pair)
-                self.token_pair_index[most_common_pair][i] -= len(indexes)
-
-                new_word, inc_pairs, dec_pairs = self._apply_merge_and_get_count_diff(word, indexes, token)
+                new_word, inc_pairs, dec_pairs = self._merge_and_get_count_diff(word, most_common_pair, token)
                 for inc_pair in inc_pairs:
                     self.token_pair_index[inc_pair][i] += 1
                     token_pairs_delta[inc_pair] += count
@@ -135,6 +122,7 @@ class TokenizeTrainer:
 
                 self.pretokenized_counts[i] = new_word, count
 
+        del self.token_pair_index[most_common_pair]
         del self.token_pair_count_hashmap[most_common_pair]
         for token_pair, delta in token_pairs_delta.items():
             self.token_pair_count_hashmap[token_pair] += delta

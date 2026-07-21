@@ -67,42 +67,16 @@ def test_count_token_pairs(pretokenized: list[tuple[Tokens, int]], expected_pair
 
 
 # ---------------------------------------------------------------------------
-# Merge Index Finding
+# Merge Application (_merge_and_get_count_diff)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    "word,merge_pair,expected_indexes",
-    [
-        pytest.param((b"a", b"b", b"c"), (b"a", b"b"), [0], id="pair at start"),
-        pytest.param((b"a", b"b", b"c"), (b"b", b"c"), [1], id="pair at end"),
-        pytest.param((b"a", b"b", b"a", b"b"), (b"a", b"b"), [0, 2], id="two non-overlapping pairs"),
-        pytest.param(
-            (b"a", b"a", b"a"),
-            (b"a", b"a"),
-            [0],
-            id="overlapping pair skips second occurrence",
-        ),
-        pytest.param((b"a", b"c"), (b"a", b"b"), [], id="pair not in word"),
-        pytest.param((b"a",), (b"a", b"b"), [], id="single token word"),
-    ],
-)
-def test_indexes_to_merge(word: Tokens, merge_pair: TokenPair, expected_indexes: list[int]):
-    assert TokenizeTrainer._indexes_to_merge(word, merge_pair) == expected_indexes
-
-
-# ---------------------------------------------------------------------------
-# Merge Application
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "word,merge_indexes,replacement,expected_word,expected_inc,expected_dec",
+    "word,merge_pair,expected_word,expected_inc,expected_dec",
     [
         pytest.param(
             (b"a", b"b", b"c"),
-            [0],
-            b"ab",
+            (b"a", b"b"),
             (b"ab", b"c"),
             [(b"ab", b"c")],
             [(b"b", b"c")],
@@ -110,8 +84,7 @@ def test_indexes_to_merge(word: Tokens, merge_pair: TokenPair, expected_indexes:
         ),
         pytest.param(
             (b"a", b"b", b"c"),
-            [1],
-            b"bc",
+            (b"b", b"c"),
             (b"a", b"bc"),
             [(b"a", b"bc")],
             [(b"a", b"b")],
@@ -119,33 +92,55 @@ def test_indexes_to_merge(word: Tokens, merge_pair: TokenPair, expected_indexes:
         ),
         pytest.param(
             (b"a", b"b", b"a", b"b"),
-            [0, 2],
-            b"ab",
+            (b"a", b"b"),
             (b"ab", b"ab"),
-            [(b"ab", b"a"), (b"b", b"ab")],
-            [(b"b", b"a"), (b"b", b"a")],
+            [(b"ab", b"a"), (b"ab", b"ab")],
+            [(b"b", b"a"), (b"ab", b"a")],
             id="merge two non-overlapping pairs",
         ),
         pytest.param(
-            (b"a", b"b", b"c"),
+            (b"a", b"a", b"a"),
+            (b"a", b"a"),
+            (b"aa", b"a"),
+            [(b"aa", b"a")],
+            [(b"a", b"a")],
+            id="overlapping pair skips second occurrence",
+        ),
+        pytest.param(
+            (b"a", b"c"),
+            (b"a", b"b"),
+            (b"a", b"c"),
             [],
-            b"ab",
-            (b"a", b"b", b"c"),
+            [],
+            id="pair not in word",
+        ),
+        pytest.param(
+            (b"a",),
+            (b"a", b"b"),
+            (b"a",),
             [],
             [],
-            id="no merge indexes",
+            id="single token word",
+        ),
+        pytest.param(
+            (b"x", b"a", b"b", b"a", b"b", b"y"),
+            (b"a", b"b"),
+            (b"x", b"ab", b"ab", b"y"),
+            [(b"x", b"ab"), (b"ab", b"a"), (b"ab", b"ab"), (b"ab", b"y")],
+            [(b"x", b"a"), (b"b", b"a"), (b"ab", b"a"), (b"b", b"y")],
+            id="merge two overlapping-separated pairs in xababy",
         ),
     ],
 )
-def test_apply_merge(
+def test_merge_and_get_count_diff(
     word: Tokens,
-    merge_indexes: list[int],
-    replacement: bytes,
+    merge_pair: TokenPair,
     expected_word: Tokens,
     expected_inc: list[TokenPair],
     expected_dec: list[TokenPair],
 ):
-    result = TokenizeTrainer._apply_merge_and_get_count_diff(word, merge_indexes, replacement)
+    replacement = b"".join(merge_pair)
+    result = TokenizeTrainer._merge_and_get_count_diff(word, merge_pair, replacement)
     assert result.new_word == expected_word
     assert result.incremented_pairs == expected_inc
     assert result.decremented_pairs == expected_dec
